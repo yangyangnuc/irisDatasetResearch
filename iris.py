@@ -32,21 +32,80 @@ iris = sns.load_dataset('iris')
 
 
 # step1, basic statistical analysis
+# 搞一稿每个图的可视化如何做的，然后作用是什么，缺点是什么，写到每个图代码注释里边
 
-# andrews curves
+# andrews curves 又名 adrews plot
+#  rolled-down version, non-integer version of KK radar m chart
+# or smoothed version of parallel coordinate plot
+# 横轴是theta相位，竖轴是映射函数的值
+# andrews 是将每个样本全部纬度数据映射到一个函数上，
+# 这个函数定义如下，fx(theta) = xi(1)/sqrt(2) + xi(2)*sin(theta)+xi(3)*sin(2*theta)+xi(4)*sin(3*theta)+ ....
+# andrews method 可以很好的保留均值、方差、不同类别样本的距离；这样可以帮助我们观察如果曲线挨的特别近，则可能是同一个类别的，这一点在iris数据集上有很好的证明；
+# 自己写一个andrew curves，纬度暂时固定
+
+def alex_andrews_curves(x,theta): # 注意这里x，theta 必须均为numpy中的数组
+    # 因为iris有4个纬度，因此映射函数写成这个样子
+    base_functions = [lambda x: x[0]/np.sqrt(2.), lambda x: x[1]*np.sin(theta), lambda x: x[2]*np.cos(theta), lambda x: x[3]*np.sin(2.*theta)]  
+    curve = np.zeros(len(theta))
+    for f in base_functions:
+        curve += f(x)
+    return curve
+iris_samples = np.loadtxt('iris_noHeader.csv', usecols=[0,1,2,3], delimiter=',')
+iris_classes = np.loadtxt('iris_noHeader.csv', usecols=[4], delimiter=',', dtype=np.str)
+theta = np.linspace(-np.pi, np.pi, 100)
+for s in iris_samples[0:50]:
+    plt.plot(theta, alex_andrews_curves(s, theta), 'r')
+for s in iris_samples[51:100]:
+    plt.plot(theta, alex_andrews_curves(s, theta), 'g')
+for s in iris_samples[101:150]:
+    plt.plot(theta, alex_andrews_curves(s, theta), 'b')
+    
+plt.title('alex self-made andrews curves')
+plt.show()
+
 plotting.andrews_curves(iris, 'species',colormap='cool')
 plt.savefig('andrews_curves.jpg')
 # plt.show()
 
-plt.close()
+# plt.close()
 
 print(iris.info())
 print(iris.head())
+print(iris['species'].value_counts())
+
+# scatter plot
+# 散点图的横轴是petal_length， 竖轴是petal_width，缺点是只能展现2D数据的直接分布情况
+plt.scatter( iris['petal_length'], iris['petal_width'], c='blue',s=40 )
+# plt.show()
+
+# joint plot，散点图与直方图的合并
+sns.jointplot(x='sepal_length', y = 'sepal_width', data=iris, size=5)
+# plt.show()
+
+
+# use seaborn's FacetGrid to color the scatterplot by species，这个是按照类别加以不同的颜色的散点图
+sns.FacetGrid(iris, hue='species', size=5).map(plt.scatter,'sepal_length', 'sepal_width').add_legend()
+# plt.show()
+
+# boxplot 特点是不受异常值的影响，分位数的计算公式如下：Qi = (n+1)/4*i, IQR[inter-quartile range] = Q3-Q1, min = Q1-1.5*IQR; max = Q3+1.5*IQR;
+sns.boxplot(x='species', y='sepal_length', data=iris)
+# plt.show()
+sns.boxplot(x='species', y='sepal_width', data=iris)
+# plt.show()
+sns.boxplot(x='species', y='petal_length', data=iris)
+# plt.show()
+sns.boxplot(x='species', y='petal_width', data=iris)
+# plt.show()
+
+# strip plot, 散点图与箱线图的合并
+sns.boxplot(x='species', y='sepal_length', data=iris)
+sns.stripplot(x='species', y='sepal_length', data=iris, jitter= True, edgecolor='gray')
+# plt.show()
 
 # set colors
 antV = ['#1890FF', '#2FC25B', '#FACC14', '#223273', '#8543E0', '#13C2C2', '#3436c7', '#F04864'] 
 
-# draw violin plot
+# draw violin plot，竖轴表示，横轴表示，提琴图综合箱线图与密度图的优点，中间白点表示中位数，黑色粗线上下分别表示75%、25%分位数，黑色细线的上下分别表示max，min，超出黑色细线范围的为异常点；黑色粗线+黑色细线总体表示95%置信区间【为何？】；可以观察概率密度分布是单峰，双峰，多峰【unimodal, bimodal还是multimodal，分布多峰，双峰意味着某个随机变量的分布中两个高频被一个低频分割开；】
 f, axes = plt.subplots(2, 2, figsize=(8, 8), sharex=True)
 sns.despine(left=True)
 
@@ -99,9 +158,22 @@ fig=sns.heatmap(iris.corr(), annot=True, cmap='GnBu', linewidths=1, linecolor='k
 plt.savefig('heatmap.jpg')
 # plt.show()
 
+# kde plot , creates and visualizes a kernel density estimate of the underlying feature
+sns.FacetGrid(iris, hue='species', size=6).map(sns.kdeplot, 'sepal_width').add_legend()
+# plt.show()
 
 
+# parallel_coordinates
+# Parallel coordinates plots each feature on a separate column & then draws lines
+# connecting the features for each data sample
+from pandas.plotting import parallel_coordinates
+parallel_coordinates(iris, 'species')
+# plt.show()
 
+# radviz plot
+from pandas.plotting import radviz
+radviz(iris, 'species')
+plt.show()
 
 
 #  step 2 using ML
@@ -205,3 +277,12 @@ print('The accuracy of the KNN using Petals is: {0}'.format(metrics.accuracy_sco
 model.fit(train_x_s, train_y_s) 
 prediction = model.predict(test_x_s) 
 print('The accuracy of the KNN using Sepals is: {0}'.format(metrics.accuracy_score(prediction,test_y_s)))
+
+
+# 检查利用数据集是否线性可分与  类别凸包交集为空这一充要条件，计算 数据集的凸包 然后check数据集的线性可分性，为模型的选择提供依据，【奥卡姆  剃刀原则】
+
+import scipy.spatial.ConvexHull
+
+
+#  总结
+# iris 数据集是英国生物学家观测鸢尾花花瓣、花萼后得出的宽度、长度数据；样本数150，类别数3，特征维度4；总体上来说是线性
