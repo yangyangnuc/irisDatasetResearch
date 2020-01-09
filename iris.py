@@ -61,7 +61,7 @@ for s in iris_samples[101:150]:
     plt.plot(theta, alex_andrews_curves(s, theta), 'b')
     
 plt.title('alex self-made andrews curves')
-plt.show()
+# plt.show()
 
 plotting.andrews_curves(iris, 'species',colormap='cool')
 plt.savefig('andrews_curves.jpg')
@@ -105,7 +105,7 @@ sns.stripplot(x='species', y='sepal_length', data=iris, jitter= True, edgecolor=
 # set colors
 antV = ['#1890FF', '#2FC25B', '#FACC14', '#223273', '#8543E0', '#13C2C2', '#3436c7', '#F04864'] 
 
-# draw violin plot，竖轴表示，横轴表示，提琴图综合箱线图与密度图的优点，中间白点表示中位数，黑色粗线上下分别表示75%、25%分位数，黑色细线的上下分别表示max，min，超出黑色细线范围的为异常点；黑色粗线+黑色细线总体表示95%置信区间【为何？】；可以观察概率密度分布是单峰，双峰，多峰【unimodal, bimodal还是multimodal，分布多峰，双峰意味着某个随机变量的分布中两个高频被一个低频分割开；】
+# draw violin plot，竖轴表示，横轴表示，提琴图综合箱线图与密度图的优点，中间白点表示中位数，黑色粗线上下分别表示75%、25%分位数，黑色细线的上下分别表示max，min，超出黑色细线[叫做须]范围的为异常点；黑色粗线+黑色细线总体表示95%置信区间【为何？】；可以观察概率密度分布是单峰[偏态分布哪边少是哪边偏，注意偏态分布中三个指标参数：均值、众数、中位数]，双峰，多峰【unimodal, bimodal还是multimodal，分布多峰，双峰意味着某个随机变量的分布中两个高频被一个低频分割开；】外部形状为核密度估计，在概率论中用来估计未知的密度函数，属于非参数检验方法之一；
 f, axes = plt.subplots(2, 2, figsize=(8, 8), sharex=True)
 sns.despine(left=True)
 
@@ -158,9 +158,16 @@ fig=sns.heatmap(iris.corr(), annot=True, cmap='GnBu', linewidths=1, linecolor='k
 plt.savefig('heatmap.jpg')
 # plt.show()
 
-# kde plot , creates and visualizes a kernel density estimate of the underlying feature
+# kde plot , creates and visualizes a kernel density estimate of the underlying feature，kde图是核密度图【kernel density estimation】，作用是给定一个样本集，输出样本的分布密度函数，解决这个问题有2个办法，第一个是参数估计法，根据先验知识假定随机变量的分布模型，然后使用数据集去拟合模型的参数；第二个方法是非参数估计法，  
 sns.FacetGrid(iris, hue='species', size=6).map(sns.kdeplot, 'sepal_width').add_legend()
 # plt.show()
+
+
+# 直方图
+n,bins, patches = plt.hist(iris['sepal_length'])
+plt.title('alex histogram')
+plt.show()
+
 
 
 # parallel_coordinates
